@@ -1,9 +1,10 @@
 import { supabase } from '../lib/supabase';
 
 export const getAvailableDoctors = async () => {
+  // FIX: Correctly fetch doctors with their associated profiles using an inner join.
   const { data, error } = await supabase
     .from('doctor_profiles')
-    .select('*, profile:profiles(*)');
+    .select('*, profiles!inner(*)');
   
   return { data, error };
 };

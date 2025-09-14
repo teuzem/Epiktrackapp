@@ -22,12 +22,12 @@ const appointmentSchema = z.object({
   doctorId: z.string().min(1, "Veuillez choisir un médecin."),
   childId: z.string().min(1, "Veuillez choisir un enfant."),
   date: z.string().min(1, "Veuillez choisir une date."),
-  time: z.string().min(1, "Veuillez choisir une heure."),
+  time: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, "Veuillez entrer une heure valide (HH:MM)."),
 });
 
 type AppointmentFormData = z.infer<typeof appointmentSchema>;
 
-type DoctorWithProfile = DoctorProfile & { profile: Profile };
+type DoctorWithProfile = DoctorProfile & { profiles: Profile };
 
 const NewAppointmentPage: React.FC = () => {
   const { user, profile } = useAuth();
@@ -38,11 +38,13 @@ const NewAppointmentPage: React.FC = () => {
   const [children, setChildren] = useState<Child[]>([]);
   const [doctors, setDoctors] = useState<DoctorWithProfile[]>([]);
   const [step, setStep] = useState(1);
-  
+
   const { control, handleSubmit, watch, formState: { errors } } = useForm<AppointmentFormData>({
     resolver: zodResolver(appointmentSchema),
     defaultValues: {
       childId: searchParams.get('child') || '',
+      date: new Date().toISOString().split('T')[0],
+      time: '09:00',
     },
   });
 
@@ -76,7 +78,12 @@ const NewAppointmentPage: React.FC = () => {
   }, [user]);
 
   const handleFormSubmit = () => {
-    setStep(2); // Move to confirmation/payment step
+    const [hour] = formData.time.split(':').map(Number);
+    if (hour < 9 || hour >= 17) {
+      toast.error("Veuillez choisir une heure entre 09:00 et 17:00.");
+      return;
+    }
+    setStep(2);
   };
 
   const handlePaymentSuccess = async (reference: string) => {
@@ -121,7 +128,7 @@ const NewAppointmentPage: React.FC = () => {
                     name="childId"
                     control={control}
                     render={({ field }) => (
-                      <select {...field} className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                      <select {...field} className="w-full px-4 py-3 border border-gray-300 rounded-lg">
                         <option value="">Sélectionner un enfant...</option>
                         {children.map(child => <option key={child.id} value={child.id}>{child.first_name} {child.last_name}</option>)}
                       </select>
@@ -135,33 +142,33 @@ const NewAppointmentPage: React.FC = () => {
                     name="doctorId"
                     control={control}
                     render={({ field }) => (
-                      <select {...field} className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                      <select {...field} className="w-full px-4 py-3 border border-gray-300 rounded-lg">
                         <option value="">Sélectionner un médecin...</option>
-                        {doctors.map(doc => <option key={doc.id} value={doc.id}>Dr. {doc.profile.first_name} {doc.profile.last_name} ({doc.specialization})</option>)}
+                        {doctors.map(doc => <option key={doc.id} value={doc.id}>Dr. {doc.profiles.first_name} {doc.profiles.last_name} ({doc.specialization})</option>)}
                       </select>
                     )}
                   />
                   {errors.doctorId && <p className="text-red-500 text-sm mt-1">{errors.doctorId.message}</p>}
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <Label htmlFor="date">Date *</Label>
-                    <Controller
-                      name="date"
-                      control={control}
-                      render={({ field }) => <Input type="date" {...field} min={new Date().toISOString().split('T')[0]} />}
-                    />
-                    {errors.date && <p className="text-red-500 text-sm mt-1">{errors.date.message}</p>}
-                  </div>
-                  <div>
-                    <Label htmlFor="time">Heure *</Label>
-                    <Controller
-                      name="time"
-                      control={control}
-                      render={({ field }) => <Input type="time" {...field} />}
-                    />
-                    {errors.time && <p className="text-red-500 text-sm mt-1">{errors.time.message}</p>}
-                  </div>
+                <div className="grid grid-cols-2 gap-6">
+                    <div>
+                        <Label htmlFor="date">Date *</Label>
+                        <Controller
+                            name="date"
+                            control={control}
+                            render={({ field }) => <Input type="date" {...field} min={new Date().toISOString().split('T')[0]} />}
+                        />
+                        {errors.date && <p className="text-red-500 text-sm mt-1">{errors.date.message}</p>}
+                    </div>
+                    <div>
+                        <Label htmlFor="time">Heure *</Label>
+                        <Controller
+                            name="time"
+                            control={control}
+                            render={({ field }) => <Input type="time" {...field} />}
+                        />
+                        {errors.time && <p className="text-red-500 text-sm mt-1">{errors.time.message}</p>}
+                    </div>
                 </div>
               </div>
               <div className="mt-8">
@@ -176,7 +183,7 @@ const NewAppointmentPage: React.FC = () => {
             <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">Récapitulatif et Paiement</h2>
             <div className="space-y-4 text-gray-700 p-4 bg-gray-50 rounded-lg">
               <p className="flex items-center"><Heart className="w-5 h-5 mr-3 text-primary-600"/> <strong>Patient:</strong> {selectedChild.first_name} {selectedChild.last_name}</p>
-              <p className="flex items-center"><Stethoscope className="w-5 h-5 mr-3 text-primary-600"/> <strong>Médecin:</strong> Dr. {selectedDoctor.profile.first_name} {selectedDoctor.profile.last_name}</p>
+              <p className="flex items-center"><Stethoscope className="w-5 h-5 mr-3 text-primary-600"/> <strong>Médecin:</strong> Dr. {selectedDoctor.profiles.first_name} {selectedDoctor.profiles.last_name}</p>
               <p className="flex items-center"><Calendar className="w-5 h-5 mr-3 text-primary-600"/> <strong>Date:</strong> {format(new Date(`${formData.date}T00:00:00`), 'd MMMM yyyy', { locale: fr })}</p>
               <p className="flex items-center"><Clock className="w-5 h-5 mr-3 text-primary-600"/> <strong>Heure:</strong> {formData.time}</p>
             </div>
@@ -187,7 +194,7 @@ const NewAppointmentPage: React.FC = () => {
             <div className="mt-8">
               <PaymentButton
                 email={profile.email}
-                amount={selectedDoctor.consultation_fee * 100} // Paystack expects amount in kobo/cents
+                amount={selectedDoctor.consultation_fee * 100}
                 onSuccess={handlePaymentSuccess}
               />
               <Button variant="secondary" onClick={() => setStep(1)} className="mt-4">Modifier</Button>

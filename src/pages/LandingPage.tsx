@@ -96,7 +96,7 @@ const LandingPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-primary-50 to-primary-100 pt-16 pb-20 overflow-hidden">
+      <section className="relative bg-gradient-to-br from-primary-50 to-primary-100 py-20 overflow-hidden">
         <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1559757148-5c350d0d3c56?ixlib=rb-4.0.3')] bg-cover bg-center opacity-5"></div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
@@ -123,7 +123,7 @@ const LandingPage: React.FC = () => {
                   <ArrowRight className="ml-2 w-5 h-5" />
                 </Link>
                 <Link
-                  to="/#features"
+                  to="/features"
                   className="inline-flex items-center px-8 py-4 border-2 border-primary-600 text-lg font-semibold rounded-xl text-primary-600 hover:bg-primary-600 hover:text-white transition-all duration-300"
                 >
                   Découvrir les fonctionnalités

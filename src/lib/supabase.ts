@@ -148,3 +148,28 @@ export interface DoctorProfile {
   created_at: string
   profile?: Profile
 }
+
+// New Types
+export interface TeamMember {
+  id: string;
+  full_name: string;
+  role: string;
+  department: 'Direction' | 'Technique' | 'Médical' | 'Opérations';
+  bio: string;
+  avatar_url: string;
+  linkedin_url?: string;
+  twitter_url?: string;
+  status: 'active' | 'inactive';
+  created_at: string;
+}
+
+export interface Testimonial {
+  id: string;
+  user_id?: string;
+  full_name: string;
+  location?: string;
+  content: string;
+  rating: number;
+  status: 'pending' | 'approved' | 'rejected';
+  created_at: string;
+}

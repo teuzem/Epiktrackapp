@@ -16,19 +16,14 @@ const Header: React.FC = () => {
 
   const navigation = [
     { name: 'Accueil', href: '/' },
-    { name: 'À Propos', href: '/#about' },
-    { name: 'Fonctionnalités', href: '/#features' },
-    { name: 'Témoignages', href: '/#testimonials' },
-    { name: 'Contact', href: '/#contact' },
+    { name: 'Équipe', href: '/team' },
+    { name: 'Fonctionnalités', href: '/features' },
+    { name: 'Témoignages', href: '/testimonials' },
+    { name: 'Contact', href: '/contact' },
   ]
 
   const isActive = (href: string) => {
-    if (href === '/') return location.pathname === '/'
-    const hashIndex = href.indexOf('#');
-    if (hashIndex !== -1) {
-      return location.pathname === '/' && location.hash === href.substring(hashIndex);
-    }
-    return location.pathname.startsWith(href)
+    return location.pathname === href;
   }
 
   return (

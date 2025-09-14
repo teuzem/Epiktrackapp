@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import React from 'react';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useNavigate } from 'react-router-dom';
@@ -8,7 +8,6 @@ import Input from '../../../components/ui/Input';
 import Label from '../../../components/ui/Label';
 import Button from '../../../components/ui/Button';
 import Card from '../../../components/ui/Card';
-import { Check, ChevronDown } from 'lucide-react';
 
 const predictionFormSchema = z.object({
   symptoms: z.array(z.string()).min(1, "Veuillez sélectionner au moins un symptôme."),
@@ -30,9 +29,8 @@ interface PredictionFormProps {
 
 const PredictionForm: React.FC<PredictionFormProps> = ({ onSubmit, isSubmitting, commonSymptoms }) => {
   const navigate = useNavigate();
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<PredictionFormData>({
+  const { register, handleSubmit, control, formState: { errors } } = useForm<PredictionFormData>({
     resolver: zodResolver(predictionFormSchema),
     defaultValues: {
       symptoms: [],
@@ -42,48 +40,41 @@ const PredictionForm: React.FC<PredictionFormProps> = ({ onSubmit, isSubmitting,
     },
   });
 
-  const selectedSymptoms = watch('symptoms');
-
-  const handleSymptomToggle = (symptom: string) => {
-    const currentSymptoms = selectedSymptoms || [];
-    const newSymptoms = currentSymptoms.includes(symptom)
-      ? currentSymptoms.filter(s => s !== symptom)
-      : [...currentSymptoms, symptom];
-    setValue('symptoms', newSymptoms, { shouldValidate: true });
-  };
-
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
       <Card>
         <div className="space-y-6">
-          
           <div>
             <Label>Symptômes observés *</Label>
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-left flex justify-between items-center"
-              >
-                <span className={selectedSymptoms.length > 0 ? 'text-gray-800' : 'text-gray-500'}>
-                  {selectedSymptoms.length > 0 ? `${selectedSymptoms.length} symptôme(s) sélectionné(s)` : 'Sélectionner les symptômes...'}
-                </span>
-                <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
-              </button>
-              {isDropdownOpen && (
-                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                  {commonSymptoms.map(symptom => (
-                    <div
-                      key={symptom}
-                      onClick={() => handleSymptomToggle(symptom)}
-                      className="flex items-center justify-between px-4 py-2 cursor-pointer hover:bg-gray-100"
-                    >
-                      <span>{symptom}</span>
-                      {selectedSymptoms.includes(symptom) && <Check className="w-5 h-5 text-primary-600" />}
-                    </div>
-                  ))}
-                </div>
-              )}
+            <div className="max-h-60 overflow-y-auto p-4 bg-gray-50 rounded-lg border">
+              <Controller
+                name="symptoms"
+                control={control}
+                render={({ field }) => (
+                  <div className="space-y-2">
+                    {commonSymptoms.map(symptom => (
+                      <div key={symptom} className="flex items-center">
+                        <input
+                          type="checkbox"
+                          id={`symptom-${symptom}`}
+                          value={symptom}
+                          checked={field.value?.includes(symptom)}
+                          onChange={(e) => {
+                            const newSymptoms = e.target.checked
+                              ? [...(field.value || []), symptom]
+                              : (field.value || []).filter(s => s !== symptom);
+                            field.onChange(newSymptoms);
+                          }}
+                          className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                        />
+                        <label htmlFor={`symptom-${symptom}`} className="ml-3 block text-sm text-gray-700">
+                          {symptom}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              />
             </div>
             {errors.symptoms && <p className="text-red-500 text-sm mt-1">{errors.symptoms.message}</p>}
           </div>
@@ -99,19 +90,19 @@ const PredictionForm: React.FC<PredictionFormProps> = ({ onSubmit, isSubmitting,
               {errors.duration && <p className="text-red-500 text-sm mt-1">{errors.duration.message}</p>}
             </div>
           </div>
-
+          
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
               <Label htmlFor="energy_level">Niveau d'énergie</Label>
-              <select {...register('energy_level')} className="w-full px-4 py-3 border border-gray-300 rounded-lg">
+              <select id="energy_level" {...register('energy_level')} className="w-full px-4 py-3 border border-gray-300 rounded-lg">
                 <option value="normal">Normal</option>
                 <option value="fatigue">Fatigué</option>
-                <option value="faible">Très faible</option>
+                <option value="faible">Faible</option>
               </select>
             </div>
             <div>
               <Label htmlFor="appetite">Appétit</Label>
-              <select {...register('appetite')} className="w-full px-4 py-3 border border-gray-300 rounded-lg">
+              <select id="appetite" {...register('appetite')} className="w-full px-4 py-3 border border-gray-300 rounded-lg">
                 <option value="normal">Normal</option>
                 <option value="diminue">Diminué</option>
                 <option value="augmente">Augmenté</option>
@@ -119,7 +110,7 @@ const PredictionForm: React.FC<PredictionFormProps> = ({ onSubmit, isSubmitting,
             </div>
             <div>
               <Label htmlFor="hydration">Hydratation</Label>
-              <select {...register('hydration')} className="w-full px-4 py-3 border border-gray-300 rounded-lg">
+              <select id="hydration" {...register('hydration')} className="w-full px-4 py-3 border border-gray-300 rounded-lg">
                 <option value="bonne">Bonne</option>
                 <option value="moyenne">Moyenne</option>
                 <option value="mauvaise">Mauvaise</option>
@@ -128,12 +119,12 @@ const PredictionForm: React.FC<PredictionFormProps> = ({ onSubmit, isSubmitting,
           </div>
 
           <div>
-            <Label htmlFor="details">Autres détails ou observations</Label>
+            <Label htmlFor="details">Autres détails</Label>
             <textarea
               id="details"
-              rows={4}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              placeholder="Décrivez tout autre signe pertinent (ex: éruption cutanée, comportement inhabituel...)"
+              rows={3}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg"
+              placeholder="Décrivez tout autre signe pertinent..."
               {...register('details')}
             />
           </div>

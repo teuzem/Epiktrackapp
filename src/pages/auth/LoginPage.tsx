@@ -7,14 +7,18 @@ import toast from 'react-hot-toast';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 
-import Input from '../../components/ui/Input';
+import AuthLayout from '../../components/auth/AuthLayout';
+import PasswordInput from '../../components/auth/PasswordInput';
 import Label from '../../components/ui/Label';
 import Button from '../../components/ui/Button';
-import { Heart, LogIn } from 'lucide-react';
+import Input from '../../components/ui/Input';
+import FaqItem from '../../components/auth/FaqItem';
+import { LogIn } from 'lucide-react';
 
 const loginSchema = z.object({
   email: z.string().email({ message: "L'adresse email est invalide." }),
   password: z.string().min(1, { message: "Le mot de passe est requis." }),
+  rememberMe: z.boolean().optional(),
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
@@ -44,82 +48,95 @@ const LoginPage: React.FC = () => {
       });
 
       if (error) {
-        throw new Error(error.message || "Une erreur s'est produite lors de la connexion.");
+        throw new Error("Email ou mot de passe incorrect.");
       }
       
       toast.success('Connexion réussie ! Redirection...');
       navigate(from, { replace: true });
 
     } catch (error: any) {
-      toast.error(error.message || "Email ou mot de passe incorrect.");
+      toast.error(error.message);
     } finally {
       setIsLoading(false);
     }
   };
 
+  const faqs = [
+    { q: "J'ai oublié mon mot de passe. Que faire ?", a: "Cliquez sur 'Mot de passe oublié ?' ci-dessous. Vous recevrez un email pour réinitialiser votre mot de passe." },
+    { q: "Puis-je utiliser le même compte pour un profil Parent et Médecin ?", a: "Non, chaque rôle nécessite un compte séparé avec une adresse email unique pour des raisons de sécurité et de séparation des données." },
+    { q: "La connexion est-elle sécurisée ?", a: "Oui, toutes les communications sont chiffrées via HTTPS et nous suivons les meilleures pratiques de sécurité pour protéger vos informations." },
+  ];
+
   return (
-    <div className="min-h-full flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gray-50">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <Link to="/" className="flex items-center justify-center space-x-2">
-            <div className="w-12 h-12 bg-primary-500 rounded-lg flex items-center justify-center">
-              <Heart className="w-7 h-7 text-white" />
-            </div>
-            <span className="text-2xl font-bold text-gray-900">EpicTrack</span>
+    <AuthLayout
+      title="Ravi de vous revoir"
+      description={
+        <>
+          Pas encore de compte ?{' '}
+          <Link to="/register" className="font-medium text-primary-600 hover:text-primary-500">
+            Inscrivez-vous
           </Link>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Connectez-vous à votre compte
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Ou{' '}
-            <Link to="/register" className="font-medium text-primary-600 hover:text-primary-500">
-              créez un nouveau compte
-            </Link>
-          </p>
+        </>
+      }
+    >
+      <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
+        <div>
+          <Label htmlFor="email">Adresse email</Label>
+          <Input
+            id="email"
+            type="email"
+            autoComplete="email"
+            placeholder="votre@email.com"
+            {...register('email')}
+          />
+          {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>}
         </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
-          <div className="rounded-md shadow-sm -space-y-px">
-            <div>
-              <Label htmlFor="email">Adresse email</Label>
-              <Input
-                id="email"
-                type="email"
-                autoComplete="email"
-                placeholder="votre@email.com"
-                {...register('email')}
-              />
-              {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>}
-            </div>
-            <div className="pt-4">
-              <Label htmlFor="password">Mot de passe</Label>
-              <Input
-                id="password"
-                type="password"
-                autoComplete="current-password"
-                placeholder="Votre mot de passe"
-                {...register('password')}
-              />
-              {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>}
-            </div>
-          </div>
 
-          <div className="flex items-center justify-between">
-            <div className="text-sm">
-              <a href="#" className="font-medium text-primary-600 hover:text-primary-500">
-                Mot de passe oublié ?
-              </a>
-            </div>
-          </div>
+        <div>
+          <Label htmlFor="password">Mot de passe</Label>
+          <PasswordInput
+            id="password"
+            autoComplete="current-password"
+            placeholder="Votre mot de passe"
+            {...register('password')}
+          />
+          {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>}
+        </div>
 
-          <div>
-            <Button type="submit" isLoading={isLoading}>
-              <LogIn className="mr-2 h-5 w-5" />
-              Se connecter
-            </Button>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <input
+              id="rememberMe"
+              type="checkbox"
+              {...register('rememberMe')}
+              className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+            />
+            <Label htmlFor="rememberMe" className="ml-2 !mb-0 text-sm text-gray-900">
+              Rester connecté
+            </Label>
           </div>
-        </form>
+          <div className="text-sm">
+            <Link to="/forgot-password" className="font-medium text-primary-600 hover:text-primary-500">
+              Mot de passe oublié ?
+            </Link>
+          </div>
+        </div>
+
+        <div>
+          <Button type="submit" isLoading={isLoading} className="w-full">
+            <LogIn className="mr-2 h-5 w-5" />
+            Se connecter
+          </Button>
+        </div>
+      </form>
+
+      <div className="mt-12">
+        <h3 className="text-lg font-semibold text-gray-900 text-center mb-4">Questions fréquentes</h3>
+        <div className="space-y-2">
+          {faqs.map((faq, i) => <FaqItem key={i} question={faq.q} answer={faq.a} />)}
+        </div>
       </div>
-    </div>
+    </AuthLayout>
   );
 };
 

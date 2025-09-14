@@ -47,23 +47,23 @@ const Footer: React.FC = () => {
                 </Link>
               </li>
               <li>
-                <Link to="/#about" className="text-gray-300 hover:text-primary-400 transition-colors text-sm">
-                  À Propos
+                <Link to="/team" className="text-gray-300 hover:text-primary-400 transition-colors text-sm">
+                  Équipe
                 </Link>
               </li>
               <li>
-                <Link to="/#features" className="text-gray-300 hover:text-primary-400 transition-colors text-sm">
+                <Link to="/features" className="text-gray-300 hover:text-primary-400 transition-colors text-sm">
                   Fonctionnalités
                 </Link>
               </li>
               <li>
-                <Link to="/#testimonials" className="text-gray-300 hover:text-primary-400 transition-colors text-sm">
+                <Link to="/testimonials" className="text-gray-300 hover:text-primary-400 transition-colors text-sm">
                   Témoignages
                 </Link>
               </li>
               <li>
-                <Link to="/register" className="text-gray-300 hover:text-primary-400 transition-colors text-sm">
-                  S'inscrire
+                <Link to="/contact" className="text-gray-300 hover:text-primary-400 transition-colors text-sm">
+                  Contact
                 </Link>
               </li>
             </ul>

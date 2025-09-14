@@ -22,48 +22,51 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchSession = async () => {
-      try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        if (error) throw error;
+    setLoading(true);
+    supabase.auth.getSession().then(({ data: { session } }) => {
         setSession(session);
         setUser(session?.user ?? null);
         if (session?.user) {
-          const { data: profileData } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .single();
-          setProfile(profileData);
+            supabase.from('profiles').select('*').eq('id', session.user.id).single()
+                .then(({ data: profileData, error }) => {
+                    if (error) {
+                        console.error('Error fetching profile on initial load:', error);
+                        setProfile(null);
+                    } else {
+                        setProfile(profileData);
+                    }
+                    setLoading(false);
+                });
+        } else {
+            setLoading(false);
         }
-      } catch (error) {
-        console.error('Error fetching session:', error);
-      } finally {
+    }).catch(err => {
+        console.error("Error in getSession:", err);
         setLoading(false);
-      }
-    };
-
-    fetchSession();
+    });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      setLoading(true);
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', session.user.id)
-          .single();
-        setProfile(profileData);
-      } else {
-        setProfile(null);
-      }
-      setLoading(false);
+        setSession(session);
+        setUser(session?.user ?? null);
+        if (session?.user) {
+            const { data: profileData, error } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', session.user.id)
+                .single();
+            if (error) {
+                console.error('Error fetching profile on auth state change:', error);
+                setProfile(null);
+            } else {
+                setProfile(profileData);
+            }
+        } else {
+            setProfile(null);
+        }
     });
 
     return () => {
-      subscription.unsubscribe();
+        subscription.unsubscribe();
     };
   }, []);
 
@@ -83,7 +86,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   return (
     <AuthContext.Provider value={value}>
-      {!loading && children}
+      {loading ? (
+        <div className="h-screen w-screen flex items-center justify-center bg-gray-50">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary-600"></div>
+        </div>
+      ) : children}
     </AuthContext.Provider>
   );
 };
