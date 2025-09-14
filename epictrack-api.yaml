@@ -1,0 +1,741 @@
+openapi: 3.0.3
+info:
+  title: EpicTrack API
+  description: API pour l'application EpicTrack de prédiction d'épidémies infantiles au Cameroun
+  version: 1.0.0
+  contact:
+    name: EpicTrack Team
+    email: contact@epictrack.cm
+servers:
+  - url: https://example.com/api
+    description: Serveur de production
+  - url: https://dev.example.com/api
+    description: Serveur de développement
+
+paths:
+  /auth/login:
+    post:
+      summary: Connexion utilisateur
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+              required:
+                - email
+                - password
+      responses:
+        '200':
+          description: Connexion réussie
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Identifiants invalides
+
+  /auth/register:
+    post:
+      summary: Inscription utilisateur
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: Inscription réussie
+        '400':
+          description: Données invalides
+
+  /children:
+    get:
+      summary: Liste des enfants du parent connecté
+      tags:
+        - Children
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Liste des enfants
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Child'
+
+    post:
+      summary: Ajouter un nouvel enfant
+      tags:
+        - Children
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChildInput'
+      responses:
+        '201':
+          description: Enfant créé avec succès
+
+  /children/{childId}:
+    get:
+      summary: Détails d'un enfant
+      tags:
+        - Children
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: childId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Détails de l'enfant
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Child'
+
+  /diseases:
+    get:
+      summary: Liste des maladies détectables
+      tags:
+        - Diseases
+      responses:
+        '200':
+          description: Liste des maladies
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Disease'
+
+  /predictions:
+    post:
+      summary: Créer une nouvelle prédiction
+      tags:
+        - Predictions
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PredictionInput'
+      responses:
+        '201':
+          description: Prédiction créée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Prediction'
+
+  /predictions/{predictionId}/report:
+    get:
+      summary: Télécharger le rapport médical
+      tags:
+        - Predictions
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: predictionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Rapport PDF
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+
+  /appointments:
+    get:
+      summary: Liste des rendez-vous
+      tags:
+        - Appointments
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Liste des rendez-vous
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Appointment'
+
+    post:
+      summary: Prendre un rendez-vous
+      tags:
+        - Appointments
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AppointmentInput'
+      responses:
+        '201':
+          description: Rendez-vous créé
+
+  /payments:
+    post:
+      summary: Initier un paiement
+      tags:
+        - Payments
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentInput'
+      responses:
+        '201':
+          description: Paiement initié
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payment'
+
+  /messages:
+    get:
+      summary: Liste des messages
+      tags:
+        - Messages
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: appointmentId
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Liste des messages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Message'
+
+    post:
+      summary: Envoyer un message
+      tags:
+        - Messages
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MessageInput'
+      responses:
+        '201':
+          description: Message envoyé
+
+  /doctors:
+    get:
+      summary: Liste des médecins disponibles
+      tags:
+        - Doctors
+      responses:
+        '200':
+          description: Liste des médecins
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Doctor'
+
+  /analytics/dashboard:
+    get:
+      summary: Données du tableau de bord
+      tags:
+        - Analytics
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Données analytiques
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardData'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    AuthResponse:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+        token:
+          type: string
+        refreshToken:
+          type: string
+
+    RegisterRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+        firstName:
+          type: string
+        lastName:
+          type: string
+        role:
+          type: string
+          enum: [parent, doctor]
+        phone:
+          type: string
+      required:
+        - email
+        - password
+        - firstName
+        - lastName
+        - role
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        role:
+          type: string
+          enum: [parent, doctor, admin]
+        isVerified:
+          type: boolean
+
+    Child:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        parentId:
+          type: string
+          format: uuid
+        firstName:
+          type: string
+        lastName:
+          type: string
+        dateOfBirth:
+          type: string
+          format: date
+        gender:
+          type: string
+          enum: [male, female]
+        bloodType:
+          type: string
+        allergies:
+          type: array
+          items:
+            type: string
+        chronicConditions:
+          type: array
+          items:
+            type: string
+        vaccinationStatus:
+          type: object
+        weightHistory:
+          type: array
+          items:
+            type: object
+            properties:
+              date:
+                type: string
+                format: date
+              weight:
+                type: number
+        heightHistory:
+          type: array
+          items:
+            type: object
+            properties:
+              date:
+                type: string
+                format: date
+              height:
+                type: number
+
+    ChildInput:
+      type: object
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        dateOfBirth:
+          type: string
+          format: date
+        gender:
+          type: string
+          enum: [male, female]
+        bloodType:
+          type: string
+        allergies:
+          type: array
+          items:
+            type: string
+      required:
+        - firstName
+        - lastName
+        - dateOfBirth
+        - gender
+
+    Disease:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        nameFr:
+          type: string
+        category:
+          type: string
+        commonSymptoms:
+          type: array
+          items:
+            type: string
+        causes:
+          type: array
+          items:
+            type: string
+        preventionMethods:
+          type: array
+          items:
+            type: string
+        minsanteApprovedTreatment:
+          type: string
+        naturalTreatment:
+          type: string
+        severityLevel:
+          type: string
+          enum: [mild, moderate, severe, critical]
+        ageGroup:
+          type: array
+          items:
+            type: string
+        prevalenceInCameroon:
+          type: number
+        isEpidemicRisk:
+          type: boolean
+
+    Prediction:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        childId:
+          type: string
+          format: uuid
+        symptoms:
+          type: object
+        additionalInfo:
+          type: object
+        predictedDiseaseId:
+          type: string
+          format: uuid
+        confidenceScore:
+          type: number
+        mlModelVersion:
+          type: string
+        status:
+          type: string
+          enum: [pending, completed, confirmed, disputed]
+        reportGeneratedAt:
+          type: string
+          format: date-time
+        reportDownloaded:
+          type: boolean
+        disease:
+          $ref: '#/components/schemas/Disease'
+        child:
+          $ref: '#/components/schemas/Child'
+
+    PredictionInput:
+      type: object
+      properties:
+        childId:
+          type: string
+          format: uuid
+        symptoms:
+          type: object
+        additionalInfo:
+          type: object
+      required:
+        - childId
+        - symptoms
+
+    Appointment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        predictionId:
+          type: string
+          format: uuid
+        parentId:
+          type: string
+          format: uuid
+        doctorId:
+          type: string
+          format: uuid
+        childId:
+          type: string
+          format: uuid
+        scheduledAt:
+          type: string
+          format: date-time
+        durationMinutes:
+          type: integer
+        consultationType:
+          type: string
+          enum: [video, chat, phone]
+        status:
+          type: string
+          enum: [pending, confirmed, completed, cancelled]
+        feeAmount:
+          type: number
+        meetingLink:
+          type: string
+        notes:
+          type: string
+        prescription:
+          type: object
+        diagnosisConfirmed:
+          type: boolean
+        aiDiagnosisAccuracy:
+          type: string
+
+    AppointmentInput:
+      type: object
+      properties:
+        predictionId:
+          type: string
+          format: uuid
+        doctorId:
+          type: string
+          format: uuid
+        childId:
+          type: string
+          format: uuid
+        scheduledAt:
+          type: string
+          format: date-time
+        consultationType:
+          type: string
+          enum: [video, chat, phone]
+      required:
+        - doctorId
+        - childId
+        - scheduledAt
+
+    Payment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        appointmentId:
+          type: string
+          format: uuid
+        amount:
+          type: number
+        currency:
+          type: string
+          default: XAF
+        paymentMethod:
+          type: string
+        paymentProvider:
+          type: string
+          enum: [paystack, cinetpay]
+        transactionId:
+          type: string
+        reference:
+          type: string
+        status:
+          type: string
+          enum: [pending, success, failed, refunded]
+        paidAt:
+          type: string
+          format: date-time
+
+    PaymentInput:
+      type: object
+      properties:
+        appointmentId:
+          type: string
+          format: uuid
+        paymentMethod:
+          type: string
+        paymentProvider:
+          type: string
+          enum: [paystack, cinetpay]
+      required:
+        - appointmentId
+        - paymentMethod
+        - paymentProvider
+
+    Message:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        appointmentId:
+          type: string
+          format: uuid
+        senderId:
+          type: string
+          format: uuid
+        receiverId:
+          type: string
+          format: uuid
+        content:
+          type: string
+        messageType:
+          type: string
+          enum: [text, image, file, sticker, gif]
+        fileUrl:
+          type: string
+        stickerUrl:
+          type: string
+        readAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+
+    MessageInput:
+      type: object
+      properties:
+        appointmentId:
+          type: string
+          format: uuid
+        receiverId:
+          type: string
+          format: uuid
+        content:
+          type: string
+        messageType:
+          type: string
+          enum: [text, image, file, sticker, gif]
+        fileUrl:
+          type: string
+        stickerUrl:
+          type: string
+      required:
+        - receiverId
+
+    Doctor:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        licenseNumber:
+          type: string
+        specialization:
+          type: string
+        experienceYears:
+          type: integer
+        hospitalAffiliation:
+          type: string
+        consultationFee:
+          type: number
+        bio:
+          type: string
+        languages:
+          type: array
+          items:
+            type: string
+        isAvailable:
+          type: boolean
+        rating:
+          type: number
+        totalConsultations:
+          type: integer
+        verifiedByMinsante:
+          type: boolean
+        profile:
+          $ref: '#/components/schemas/User'
+
+    DashboardData:
+      type: object
+      properties:
+        totalChildren:
+          type: integer
+        totalPredictions:
+          type: integer
+        totalAppointments:
+          type: integer
+        recentPredictions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Prediction'
+        upcomingAppointments:
+          type: array
+          items:
+            $ref: '#/components/schemas/Appointment'
+        healthTrends:
+          type: object
+        monthlyStats:
+          type: object
